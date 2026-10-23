@@ -499,8 +499,10 @@ class USBDongle(object):
                                     finally:
                                         self.rsema.release()                            # THREAD SAFETY DANCE COMPLETE
                                
-                            else:            
+                            else:
+                                # the rest of this message has not arrived yet: read more
                                 if self._debug>1:     sys.stderr.write('=')
+                                break
 
                             msg = self.recv_queue
                             msglen = len(msg)
