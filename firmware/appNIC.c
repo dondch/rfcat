@@ -55,6 +55,7 @@ void appMainInit(void)
 void appMainLoop(void)
 {
     __xdata u8 processbuffer;
+    __xdata u8 statuslen;
 
     if (rfif)
     {
@@ -66,11 +67,13 @@ void appMainLoop(void)
             processbuffer = !rfRxCurrentBuffer;
             if(rfRxProcessed[processbuffer] == RX_UNPROCESSED)
             {   
-                // we've received a packet.  deliver it.
+                // we've received a packet.  deliver it, with the RSSI and LQI/CRC_OK bytes
+                // the radio appends when PKTCTRL1.APPEND_STATUS is set.
+                statuslen = (PKTCTRL1 & PKTCTRL1_APPEND_STATUS) ? 2 : 0;
                 if (PKTCTRL0&1)     // variable length packets have a leading "length" byte, let's skip it
-                    txdata(APP_NIC, NIC_RECV, (u8)rfrxbuf[processbuffer][0], (u8*)&rfrxbuf[processbuffer][1]);
+                    txdata(APP_NIC, NIC_RECV, (u8)rfrxbuf[processbuffer][0] + statuslen, (u8*)&rfrxbuf[processbuffer][1]);
                 else
-                    txdata(APP_NIC, NIC_RECV, PKTLEN, (u8*)&rfrxbuf[processbuffer]);
+                    txdata(APP_NIC, NIC_RECV, PKTLEN + statuslen, (u8*)&rfrxbuf[processbuffer]);
 
                 /* Set receive buffer to processed so it can be used again */
                 rfRxProcessed[processbuffer] = RX_PROCESSED;
