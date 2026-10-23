@@ -618,6 +618,18 @@ void appMainInit(void)
 
 /* appMain is the application.  it is called every loop through main, as does the USB handler code.
  * do not block if you want USB to work.                                                           */
+// Deliver a received packet to the host. When PKTCTRL1.APPEND_STATUS is set the radio has
+// appended two bytes, RSSI and LQI with CRC_OK, which the host wants as well.
+static void deliverRxPacket(u8 processbuffer)
+{
+    u8 statuslen = (PKTCTRL1 & PKTCTRL1_APPEND_STATUS) ? 2 : 0;
+
+    if (PKTCTRL0&1)     // variable length packets have a leading "length" byte, let's skip it
+        txdata(APP_NIC, NIC_RECV, (u8)rfrxbuf[processbuffer][0] + statuslen, (u8*)&rfrxbuf[processbuffer][1]);
+    else
+        txdata(APP_NIC, NIC_RECV, (rfRxInfMode ? rfRxLargeLen : PKTLEN) + statuslen, (u8*)&rfrxbuf[processbuffer]);
+}
+
 void appMainLoop(void)
 {
 
@@ -680,11 +692,7 @@ void appMainLoop(void)
                     processbuffer = !rfRxCurrentBuffer;
                     if(rfRxProcessed[processbuffer] == RX_UNPROCESSED)
                     {   
-                        // we've received a packet.  deliver it.
-                        if (PKTCTRL0&1)     // variable length packets have a leading "length" byte, let's skip it
-                            txdata(APP_NIC, NIC_RECV, (u8)rfrxbuf[processbuffer][0], (u8*)&rfrxbuf[processbuffer][1]);
-                        else
-                            txdata(APP_NIC, NIC_RECV, PKTLEN, (u8*)&rfrxbuf[processbuffer]);
+                        deliverRxPacket(processbuffer);
 
                         /* Set receive buffer to processed so it can be used again */
                         rfRxProcessed[processbuffer] = RX_PROCESSED;
@@ -717,11 +725,7 @@ void appMainLoop(void)
                     processbuffer = !rfRxCurrentBuffer;
                     if(rfRxProcessed[processbuffer] == RX_UNPROCESSED)
                     {   
-                        // we've received a packet.  deliver it.
-                        if (PKTCTRL0&1)     // variable length packets have a leading "length" byte, let's skip it
-                            txdata(APP_NIC, NIC_RECV, (u8)rfrxbuf[processbuffer][0], (u8*)&rfrxbuf[processbuffer][1]);
-                        else
-                            txdata(APP_NIC, NIC_RECV, PKTLEN, (u8*)&rfrxbuf[processbuffer]);
+                        deliverRxPacket(processbuffer);
 
                         /* Set receive buffer to processed so it can be used again */
                         rfRxProcessed[processbuffer] = RX_PROCESSED;
@@ -756,13 +760,7 @@ void appMainLoop(void)
                     processbuffer = !rfRxCurrentBuffer;
                     if(rfRxProcessed[processbuffer] == RX_UNPROCESSED)
                     {   
-                        // we've received a packet.  deliver it.
-                        if (PKTCTRL0&1)     // variable length packets have a leading "length" byte, let's skip it
-                        {
-                            txdata(APP_NIC, NIC_RECV, (u8)rfrxbuf[processbuffer][0], (u8*)&rfrxbuf[processbuffer][1]);
-                        } else {
-                            txdata(APP_NIC, NIC_RECV, rfRxInfMode ? rfRxLargeLen : PKTLEN, (u8*)&rfrxbuf[processbuffer]);
-                        }
+                        deliverRxPacket(processbuffer);
 
                         /* Set receive buffer to processed so it can be used again */
                         rfRxProcessed[processbuffer] = RX_PROCESSED;
