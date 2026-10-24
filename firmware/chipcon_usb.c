@@ -141,10 +141,11 @@ int txdata(u8 app, u8 cmd, u16 len, __xdata u8* dataptr)      // assumed EP5 for
             loop--;
         }
 
-        // The host stopped collecting EP5 (its reader died or has not started yet). Waiting
-        // any longer would also stop EP0 being serviced, so the host could not even reset us
-        // and both sides would wait forever. Flush the packet it never collected and drop
-        // this message instead.
+        // The host stopped collecting EP5 (its reader died, or rflib is re-opening the device
+        // and needs EP0 answered first). Waiting longer would also stop EP0 being serviced, so
+        // the host could not even reset us and both sides would wait forever. A reading host
+        // collects a chunk within a few milliseconds, so flush the packet it never collected
+        // and drop this message.
         if (!loop)
         {
             USBCSIL |= USBCSIL_FLUSH_PACKET;
