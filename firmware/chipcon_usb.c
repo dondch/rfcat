@@ -134,21 +134,22 @@ int txdata(u8 app, u8 cmd, u16 len, __xdata u8* dataptr)      // assumed EP5 for
         // if we do this in the loop, for some reason ep5.flags never clears between frames.  
         // don't know why since this bit is cleared in the USB ISR.
         loop = TXDATA_MAX_WAIT;
-        //while (ep5.flags & EP_INBUF_WRITTEN && loop>0)                 // has last msg been recvd?
-        //LED = 1;    //FIXME: DEBUG
-        while (USBCSIL & USBCSIL_INPKT_RDY) // && loop>0)                 // has last msg been recvd?
+        while ((USBCSIL & USBCSIL_INPKT_RDY) && loop>0)                 // has last msg been recvd?
         {
-            //REALLYFASTBLINK();
             lastCode[1] = LCE_USB_EP5_TX_WHILE_INBUF_WRITTEN;
+            sleepMicros(100);
             loop--;
         }
-        //LED = 0;    //FIXME: DEBUG
-        
-        // if USB is still not ready... fail.  this should only happen when the USB is disconnected anyway <crosses fingers>
-        //  ODD POINT OF INTEREST: INFINITE MODE FAILS IF WE REMOVE THIS... ??
+
+        // The host stopped collecting EP5 (its reader died, or rflib is re-opening the device
+        // and needs EP0 answered first). Waiting longer would also stop EP0 being serviced, so
+        // the host could not even reset us and both sides would wait forever. A reading host
+        // collects a chunk within a few milliseconds, so flush the packet it never collected
+        // and drop this message.
         if (!loop)
         {
-            blink(1000, 1000);
+            USBCSIL |= USBCSIL_FLUSH_PACKET;
+            lastCode[1] = LCE_USB_EP5_TX_HOST_NOT_READING;
             return -1;
         }
         

@@ -48,6 +48,7 @@ extern __xdata u8 ledMode;
 #define LCE_NO_ERROR                            0x0
 
 #define LCE_USB_EP5_TX_WHILE_INBUF_WRITTEN      0x1
+#define LCE_USB_EP5_TX_HOST_NOT_READING         0x2
 #define LCE_USB_EP0_SENT_STALL                  0x4
 #define LCE_USB_EP5_OUT_WHILE_OUTBUF_WRITTEN    0x5
 #define LCE_USB_EP5_LEN_TOO_BIG                 0x6

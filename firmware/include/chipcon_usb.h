@@ -183,7 +183,7 @@
 #define USBD_OIF_OUTEP4IF       (u16)0x2000
 #define USBD_OIF_OUTEP5IF       (u16)0x4000
 
-#define TXDATA_MAX_WAIT         10000
+#define TXDATA_MAX_WAIT         100     // polls of about 1ms: a host that has not collected a chunk for 0.1s is gone
 
 
 
